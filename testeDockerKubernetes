@@ -1,20 +1,11 @@
 pipeline {
     agent any
 
-    environment {
-        // Usando env vars de forma aprovada
-        DOCKER_IMAGE = "pedromarineli/jenkinsdood"
-        DOCKERFILE_PATH = "./jenkins/Dockerfile"
-        K8S_DEPLOY_FILE = "./jenkins/deploy.yaml"
-    }
-
     stages {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Forma aprovada de interpolar (usando .toString())
-                    def tag = env.BUILD_ID.toString()
-                    dockerapp = docker.build("${DOCKER_IMAGE}:${tag}", "-f ${DOCKERFILE_PATH} ./jenkins")
+                    dockerapp = docker.build("pedromarineli/jenkinsdood:${env.BUILD_ID}", '-f ./jenkins/Dockerfile ./jenkins')
                 }
             }
         }
@@ -23,22 +14,23 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-cred') {
-                        dockerapp.push("latest")
-                        dockerapp.push(env.BUILD_ID.toString())
+                        dockerapp.push('latest')
+                        dockerapp.push("${env.BUILD_ID}")
                     }
                 }
             }
-        }
+        }     
 
         stage('Deploy no Kubernetes') {
+            environment {
+                tag_version = "${env.BUILD_ID}"
+            }
             steps {
                 withKubeConfig([credentialsId: 'kubernetes-cred']) {
-                    // Substituição de tag sem sed (usando recursos do Kubernetes)
-                    sh """
-                        TAG_VERSION=${env.BUILD_ID} envsubst < ${K8S_DEPLOY_FILE} | kubectl apply -f -
-                    """
+                    sh 'sed -i "s/{{tag}}/$tag_version/g" ./jenkins/deploy.yaml'
+                    sh 'kubectl apply -f k8s/deploy.yaml'
                 }
             }
-        }
+        } 
     }
 }
