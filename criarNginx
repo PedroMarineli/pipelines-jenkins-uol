@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = "nginx"  // Imagem do Docker Hub
         K8S_NAMESPACE = "default"                   // Namespace Kubernetes
-        DEPLOY_FILE = "nginx/deploy.yaml"         // Arquivo de deploy
+        DEPLOY_FILE = "nginx/niginx-deploy.yaml"         // Arquivo de deploy
     }
 
     stages {
