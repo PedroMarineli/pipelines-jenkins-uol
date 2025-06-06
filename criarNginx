@@ -2,13 +2,12 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "nginx"  // Imagem do Docker Hub
-        K8S_NAMESPACE = "default"                   // Namespace Kubernetes
-        DEPLOY_FILE = "nginx/nginx-deploy.yaml"         // Arquivo de deploy
+        DOCKER_IMAGE = "nginx"  
+        K8S_NAMESPACE = "default"                   
+        DEPLOY_FILE = "nginx/nginx-deploy.yaml"         
     }
 
     stages {
-        // --- STAGE 1: Baixar imagem e verificar ---
         stage('Pull Docker Image') {
             steps {
                 script {
@@ -22,17 +21,15 @@ pipeline {
             }
         }
 
-        // --- STAGE 2: Deploy no Kubernetes ---
+        
         stage('Deploy to Kubernetes') {
             steps {
-                withKubeConfig([credentialsId: 'kubernetes-cred']) {  // Credencial do kubeconfig
+                withKubeConfig([credentialsId: 'kubernetes-cred']) {  
                     script {
-                        // Atualiza o arquivo YAML com a versão desejada (opcional)
                         sh """
                             sed -i 's|image:.*|image: ${DOCKER_IMAGE}:latest|g' ${DEPLOY_FILE}
                         """
 
-                        // Aplica o deployment
                         sh """
                             kubectl apply -f ${DEPLOY_FILE} -n ${K8S_NAMESPACE} && \
                             kubectl rollout status deployment/${DOCKER_IMAGE} -n ${K8S_NAMESPACE} --timeout=90s
