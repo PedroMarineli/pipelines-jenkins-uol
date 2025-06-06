@@ -30,6 +30,7 @@ pipeline {
                             sed -i 's|image:.*|image: ${DOCKER_IMAGE}:latest|g' ${DEPLOY_FILE}
                         """
 
+                        // Aplica o deployment
                         sh """
                             kubectl apply -f ${DEPLOY_FILE} -n ${K8S_NAMESPACE} && \
                             kubectl rollout status deployment/${DOCKER_IMAGE} -n ${K8S_NAMESPACE} --timeout=90s
